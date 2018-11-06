@@ -31,13 +31,24 @@ def mutation(population, size, len, rulebase, data, cond_len):
     print("Mutation")
     for i in range(size):
         population[i].set_fitness(0)
+        k = 0
         for j in range(len):
             mutate = random.random()
             if mutate < 0.01:
-                if population[i].get_gene()[j] is 1:
-                    population[i].update_gene(j, 0)
+                if k is cond_len:
+                    if population[i].get_gene()[j] is 1:
+                        population[i].update_gene(j, 0)
+                    else:
+                        population[i].update_gene(j, 1)
                 else:
-                    population[i].update_gene(j, 1)
+                    if population[i].get_gene()[j] is 1:
+                        population[i].update_gene(j, random.choice([0, 2]))
+                    else:
+                        population[i].update_gene(j, random.choice([1, 2]))
+            if k is cond_len:
+                k = 0
+            else:
+                k = k + 1
     for i in range(size):
         fitness_function(population[i], cond_len, rulebase, data)
     return population, rulebase
@@ -55,11 +66,19 @@ def fitness_function(gene, len, rule_base, data):
         k = k + 1
     for d in data:
         for r in rule_base:
-            if d.get_var() == r.get_cond():
+            if match(d.get_var(), r.get_cond()) is True:
                 if d.get_classification() == r.get_out():
                     fitness = fitness + 1
                     break
     gene.set_fitness(fitness)
+
+
+def match(d, r):
+    for i in range(len(d)):
+        if d[i] is not r[i] and r[i] is not 2:
+            return False
+            break
+    return True
 
 
 # Tournament selection to determine new offspring for new generation pool
@@ -80,14 +99,23 @@ def tournament_selection(population, size):
 
 
 # initialises the chromosomes for the start pool for first generation
-def __init__chromosomes(size, len):
+def __init__chromosomes(size, len, cond_len):
+    k = 0
     population = [BinaryGene() for i in range(size)]
     for i in range(size):
         population[i].set_fitness(0)
         for j in range(len):
-            population[i].set_gene(random.randint(0, 1))
-            if population[i].get_gene()[j] is 1:
-                population[i].set_fitness(population[i].get_fitness() + 1)
+            #population[i].set_gene(random.randint(0, 1))
+            if k is cond_len:
+                population[i].set_gene(random.randint(0, 1))
+                k = 0
+            else:
+                population[i].set_gene(random.randint(0, 2))
+                k = k + 1
+            #if population[i].get_gene()[j] is 1:
+            #    population[i].set_fitness(population[i].get_fitness() + 1)
+        #print(population[i].get_gene())
+        #exit()
     return population
 
 
@@ -142,9 +170,10 @@ def main():
     data_len = 64
     num_rule = 10
     chromosome_len = (cond_len + 1) * num_rule
+    print(chromosome_len)
 
     data_set = __init__data("data2.txt", cond_len, data_len)
-    population_obj = __init__chromosomes(pop_size, chromosome_len).copy()
+    population_obj = __init__chromosomes(pop_size, chromosome_len, cond_len).copy()
     rule_base = __init__rules(cond_len, num_rule).copy()
 
     best = 0
