@@ -69,7 +69,7 @@ def fitness_function(gene, len, rule_base, data):
             if match(d.get_var(), r.get_cond()) is True:
                 if d.get_classification() == r.get_out():
                     fitness = fitness + 1
-                    break
+                break
     gene.set_fitness(fitness)
 
 
@@ -164,13 +164,12 @@ def fitness(population, size):
 def main():
     var = 50
     pop_size = var
-    generations = 50
     mean = []
     cond_len = 7
     data_len = 64
     num_rule = 10
     chromosome_len = (cond_len + 1) * num_rule
-    print(chromosome_len)
+    generations = 1000
 
     data_set = __init__data("data2.txt", cond_len, data_len)
     population_obj = __init__chromosomes(pop_size, chromosome_len, cond_len).copy()
