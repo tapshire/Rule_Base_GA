@@ -7,70 +7,83 @@ import csv
 
 
 # Performs one point crossover with random point selection
-def crossover(population, size, len, rulebase, data, cond_len):
-    print("Crossover")
-    for i in range(size):
-        crossover = random.random()
-        if i % 2 is 1 and crossover > 0.6:
-            crossover_pt = random.randint(0, len - 1)
-            population[i].set_fitness(0)
-            population[i - 1].set_fitness(0)
-            for j in range(len):
-                if j >= crossover_pt:
-                    parent_one = population[i - 1].get_gene()[j]
-                    parent_two = population[i].get_gene()[j]
-                    population[i - 1].update_gene(j, parent_two)
-                    population[i].update_gene(j, parent_one)
-            fitness_function(population[i - 1], cond_len, rulebase, data)
-            fitness_function(population[i], cond_len, rulebase, data)
-    return population
+# def crossover(population, size, chromo_len, rulebase, data, cond_len):
+#     for i in range(size):
+#         crossover = random.random()
+#         if i % 2 is 1 and crossover > 0.6:
+#             crossover_pt = random.randint(0, chromo_len - 1)
+#             population[i].set_fitness(0)
+#             population[i - 1].set_fitness(0)
+#             for j in range(chromo_len):
+#                 if j >= crossover_pt:
+#                     parent_one = population[i - 1].get_gene()[j]
+#                     parent_two = population[i].get_gene()[j]
+#                     population[i - 1].update_gene(j, parent_two)
+#                     population[i].update_gene(j, parent_one)
+#             #fitness_function(population[i - 1], cond_len, rulebase, data)
+#             #fitness_function(population[i], cond_len, rulebase, data)
+#     return population
 
 
 # Performs mutation with random probability for each gene bit flip
-def mutation(population, size, len, rulebase, data, cond_len):
-    print("Mutation")
+def mutation(population, size, chromo_len, rulebase, data, cond_len):
+   # print("B_M " + str(population[0].get_gene()))
     for i in range(size):
         population[i].set_fitness(0)
-        k = 0
-        for j in range(len):
+        for j in range(1, chromo_len + 1):
             mutate = random.random()
             if mutate < 0.01:
-                if k is cond_len:
-                    if population[i].get_gene()[j] is 1:
-                        population[i].update_gene(j, 0)
+                if j % 15 is 0:
+                    if population[i].get_gene()[j - 1] is 1:
+                        population[i].update_gene(j - 1, 0)
                     else:
-                        population[i].update_gene(j, 1)
+                        population[i].update_gene(j - 1, 1)
                 else:
-                    if population[i].get_gene()[j] is 1:
-                        population[i].update_gene(j, random.choice([0, 2]))
+                    rand_num = random.uniform(-0.01, 0.01)
+                    new_gene = rand_num + population[i].get_gene()[j]
+                    if new_gene > 1:
+                        population[i].update_gene(j - 1, 1)
+                    elif new_gene < 0:
+                        population[i].update_gene(j - 1, 1)
                     else:
-                        population[i].update_gene(j, random.choice([1, 2]))
-            if k is cond_len:
-                k = 0
-            else:
-                k = k + 1
+                        population[i].update_gene(j - 1, new_gene)
+    #print("A_M " + str(population[0].get_gene()))
     for i in range(size):
         fitness_function(population[i], cond_len, rulebase, data)
-    return population, rulebase
+    return population
 
 
 # Fitness function to determine fitness of current candidate
-def fitness_function(gene, len, rule_base, data):
+def fitness_function(gene, cond_len, rule_base, data):
     fitness = 0
     k = 0
     for i in range(10):
-        for j in range(len):
+        for j in range(cond_len * 2):
             rule_base[i].update_cond(j, gene.get_gene()[k])
             k = k + 1
         rule_base[i].out = gene.get_gene()[k]
         k = k + 1
-    for d in data:
-        for r in rule_base:
-            if match(d.get_var(), r.get_cond()) is True:
-                if d.get_classification() == r.get_out():
+    #print("R " + str(rule_base[0].get_cond()) + str(rule_base[0].get_out()))
+    for d in range(len(data)):
+        for r in range(len(rule_base)):
+            if match_range(data[d].get_var(), rule_base[r].get_cond(), cond_len) == True:
+                #print("true")
+                if data[d].get_classification() == rule_base[r].get_out():
                     fitness = fitness + 1
+                    #print(fitness)
                 break
+    #print(fitness)
     gene.set_fitness(fitness)
+
+
+def match_range(d, r, r_len):
+    k = 0
+    for i in range(len(d)):
+        if d[k] < (r[i] * 2) or d[k] > (r[i] * 2) + 1:
+            return False
+            #break
+        k = k + 1
+    return True
 
 
 def match(d, r):
@@ -83,7 +96,6 @@ def match(d, r):
 
 # Tournament selection to determine new offspring for new generation pool
 def tournament_selection(population, size):
-    print("Tournament Selection")
     offspring = []
     for i in range(size):
         parent_one = random.randrange(0, size)
@@ -95,6 +107,7 @@ def tournament_selection(population, size):
             p2 = deepcopy(population[parent_two])
             offspring.append(p2)
         population[i] = offspring[i]
+
     return population
 
 
@@ -106,11 +119,11 @@ def __init__chromosomes(size, len, cond_len):
         population[i].set_fitness(0)
         for j in range(len):
             #population[i].set_gene(random.randint(0, 1))
-            if k is cond_len:
-                population[i].set_gene(random.randint(0, 1))
+            if k is (cond_len * 2):
+                population[i].set_gene(random.choice([0,1]))
                 k = 0
             else:
-                population[i].set_gene(random.randint(0, 2))
+                population[i].set_gene(random.uniform(0, 1))
                 k = k + 1
             #if population[i].get_gene()[j] is 1:
             #    population[i].set_fitness(population[i].get_fitness() + 1)
@@ -123,7 +136,7 @@ def __init__chromosomes(size, len, cond_len):
 def __init__rules(len, num_rule):
     rulebase = [Rules() for i in range(num_rule)]
     for i in range(num_rule):
-        for j in range(len):
+        for j in range(len * 2):
             rulebase[i].set_cond(0)
     return rulebase
 
@@ -134,14 +147,23 @@ def __init__data(file, len, data_len):
     data = [Data() for i in range(data_len)]
     file_name = open(file, 'r', newline='')
     next(file_name)
+    next(file_name)
     for line in file_name:
         line = line.strip('\n')
+        line = line.strip('\r')
+        temp = ""
         j = 0
         for i in line:
-            if j < len:
-                data[k].set_var(i)
+            if(i is not " "):
+                temp = temp + i
+                if j is 63:
+                    data[k].classification = int(temp)
+                    temp = ""
+            else:
+                data[k].set_var(str(temp))
+                temp = ""
             j = j + 1
-        data[k].classification = line[len + 1]
+        #print(str(data[k].get_var()) + " " + str(data[k].classification))
         k = k + 1
     return data
 
@@ -156,33 +178,50 @@ def fitness(population, size):
     mean = sum / size
     print("MEAN: " + str(mean))
     print("MAX: " + str(max))
-    print("SUM: " + str(sum))
+    #print("SUM: " + str(sum))
     return population, mean, max
 
 
 # main program to run GA
 def main():
-    var = 50
+    var = 400
     pop_size = var
     mean = []
     cond_len = 7
-    data_len = 64
+    data_len = 2000
     num_rule = 10
-    chromosome_len = (cond_len + 1) * num_rule
-    generations = 1000
+    chromosome_len = ((cond_len * 2) + 1) * num_rule
+    generations = 500
 
-    data_set = __init__data("data2.txt", cond_len, data_len)
+    train = []
+    test = []
+
+    data_set = __init__data("data3.txt", cond_len, data_len).copy()
     population_obj = __init__chromosomes(pop_size, chromosome_len, cond_len).copy()
     rule_base = __init__rules(cond_len, num_rule).copy()
 
+    for i in range(len(data_set)):
+        if i % 2 is 0:
+            test.append(data_set[i])
+        else:
+            train.append(data_set[i])
+
+    print(len(train))
+    print(len(test))
+
+
     best = 0
+
 
     for i in range(generations):
 
         print("GENERATION " + str(i + 1))
-        population_obj = tournament_selection(population_obj, pop_size)
-        population_obj = crossover(population_obj, pop_size, chromosome_len, rule_base, data_set, cond_len)
-        population_obj, rule_base = mutation(population_obj, pop_size, chromosome_len, rule_base, data_set, cond_len)
+        population_obj = tournament_selection(population_obj, pop_size).copy()
+        #print("T " + str(population_obj[0].get_gene()))
+        #population_obj = crossover(population_obj, pop_size, chromosome_len, rule_base, train, cond_len).copy()
+        #print("C " + str(population_obj[0].get_gene()))
+        population_obj = mutation(population_obj, pop_size, chromosome_len, rule_base, train, cond_len).copy()
+        #print("M " + str(population_obj[0].get_gene()))
 
 
         # Maintain best fitness gene for each generation
@@ -201,13 +240,17 @@ def main():
 
         population_obj, val, val_2 = fitness(population_obj, pop_size)
 
+        for i in range(len(population_obj)):
+            fitness_function(population_obj[i], cond_len, rule_base, test)
+
+
+
         mean.append(val)
         mean.append(val_2)
         print("-------------------")
 
-    for gene in population_obj:
-        if gene.get_fitness() == val_2:
-            print(gene.get_gene())
+
+        #print(population_obj[0].get_gene())
 
     with open('genetic_algorithm.csv', 'w', newline='') as new:
         writer = csv.writer(new)

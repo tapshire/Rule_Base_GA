@@ -5,7 +5,7 @@ class Data:
         self.classification = 0
 
     def set_var(self, value):
-        self.variables.append(int(value))
+        self.variables.append(float(value))
 
     def get_var(self):
         return self.variables

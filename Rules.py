@@ -15,4 +15,3 @@ class Rules:
 
     def get_out(self):
         return self.out
-

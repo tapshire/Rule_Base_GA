@@ -17,4 +17,4 @@ class BinaryGene:
         return self.fitness;
 
     def update_gene(self, index, value):
-        self.gene[index] = value
+        self.gene[index] = float(value)
